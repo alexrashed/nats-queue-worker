@@ -1,4 +1,9 @@
-FROM golang:1.10-alpine as golang
+FROM alpine:3.9 as qemu_extract
+COPY --from=multiarch/qemu-user-static:x86_64-aarch64 /usr/bin qemu_user_static.tgz
+RUN tar -xzvf qemu_user_static.tgz
+
+FROM arm64v8/golang:1.11-alpine as golang
+COPY --from=qemu_extract qemu-* /usr/bin
 WORKDIR /go/src/github.com/openfaas/nats-queue-worker
 
 COPY vendor     vendor
@@ -10,9 +15,10 @@ COPY readconfig.go 	.
 COPY readconfig_test.go .
 COPY main.go  		.
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -a -installsuffix cgo -o app .
 
-FROM alpine:3.8
+FROM arm64v8/alpine:3.9
+COPY --from=qemu_extract qemu-* /usr/bin
 
 RUN addgroup -S app \
   && adduser -S -g app app \

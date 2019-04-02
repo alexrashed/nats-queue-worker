@@ -1,29 +1,29 @@
 TAG?=latest
 
-.PHONY: build
-build:
-	docker build --build-arg http_proxy="${http_proxy}" --build-arg https_proxy="${https_proxy}" -t openfaas/queue-worker:$(TAG) .
+.DEFAULT_GOAL := all
 
-.PHONY: push
-push:
-	docker push openfaas/queue-worker:$(TAG)
+amd64-build:
+	docker build --build-arg http_proxy="${http_proxy}" --build-arg https_proxy="${https_proxy}" -t alexrashed/queue-worker:$(TAG)-amd64 .
 
-.PHONY: all
-all: build
+amd64-push:
+	docker push alexrashed/queue-worker:$(TAG)-amd64
 
-.PHONY: ci-armhf-build
-ci-armhf-build:
-	docker build --build-arg http_proxy="${http_proxy}" --build-arg https_proxy="${https_proxy}" -t openfaas/queue-worker:$(TAG)-armhf . -f Dockerfile.armhf
+armhf-build:
+	docker build --build-arg http_proxy="${http_proxy}" --build-arg https_proxy="${https_proxy}" -t alexrashed/queue-worker:$(TAG)-armhf . -f Dockerfile.armhf
 
-.PHONY: ci-armhf-push
-ci-armhf-push:
-	docker push openfaas/queue-worker:$(TAG)-armhf
+armhf-push:
+	docker push alexrashed/queue-worker:$(TAG)-armhf
 
-.PHONY: ci-arm64-build
-ci-arm64-build:
-	docker build --build-arg http_proxy="${http_proxy}" --build-arg https_proxy="${https_proxy}" -t openfaas/queue-worker:$(TAG)-arm64 . -f Dockerfile.arm64
+arm64-build:
+	docker build --build-arg http_proxy="${http_proxy}" --build-arg https_proxy="${https_proxy}" -t alexrashed/queue-worker:$(TAG)-arm64 . -f Dockerfile.arm64
 
-.PHONY: ci-arm64-push
-ci-arm64-push:
-	docker push openfaas/queue-worker:$(TAG)-arm64
+arm64-push:
+	docker push alexrashed/queue-worker:$(TAG)-arm64
 
+multiarch-create:
+	docker manifest create --amend alexrashed/queue-worker:$(TAG) alexrashed/queue-worker:$(TAG)-amd64 alexrashed/queue-worker:$(TAG)-armhf alexrashed/queue-worker:$(TAG)-arm64
+
+multiarch-push: 
+	docker manifest push alexrashed/queue-worker:$(TAG)
+
+all: arm64-build amd64-build armhf-build arm64-push amd64-push armhf-push multiarch-create multiarch-push
